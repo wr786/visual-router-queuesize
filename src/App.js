@@ -8,7 +8,7 @@ function App() {
   return (
     <div className="App">
       <Layout>
-        <Header style={{ textAlign: "center", padding: "0.5em" }}>
+        <Header style={{ textAlign: "center", padding: "0.3em" }}>
           <Title>
             <div style={{ color: "white" }}>Visual Router QueueSize</div>
           </Title>
