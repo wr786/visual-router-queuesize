@@ -11,7 +11,7 @@ import { PlayCircleOutlined, PauseOutlined } from "@ant-design/icons";
 import outputData from './data.json';
 const { DragCanvas, ZoomCanvas, DragNode, ActivateRelations } = Behaviors;
 
-const sep = "                                            ";
+const sep = "             ";
 
 const grayNode = {
   size: 20,
@@ -56,9 +56,9 @@ const defaultNode = {
   type: "graphin-circle",
   style: {
     keyshape: whiteNode,
-    label: {
-      visible: false,
-    },
+    // label: {
+    //   visible: false,
+    // },
   },
 };
 
@@ -86,6 +86,20 @@ const update = (data, type = "node") => {
 class Graph extends React.Component {
   constructor(props) {
     super(props);
+
+    let tmpNodes = []
+    for (let i = 0; i < outputData.nodes.length; i++) {
+      tmpNodes.push({
+        id: outputData.nodes[i].id,
+        style: {
+          label: {
+            value: [i].toString(),
+            offset: [0, -15]
+          }
+        }
+      })
+    }
+    console.log(tmpNodes)
     
     let tmpEdges = []
     for (let i = 0; i < outputData.edges.length; i++) {
@@ -113,7 +127,7 @@ class Graph extends React.Component {
       time: 0,
       timeLimit: outputData.timeLimit,
       data: {
-        nodes: outputData.nodes,
+        nodes: tmpNodes,
         edges: tmpEdges
       },
     };
@@ -128,7 +142,7 @@ class Graph extends React.Component {
     return newData;
   }
 
-  updateNode(data, nodeID) {
+  updateNode(data, nodeID, __i) {
     // const queueSum = Math.round(Math.random() * 100); // 应该换成读取
     let queueSum = 0;
     // for(let i = 0; i < data.edges.length; i++) {
@@ -145,6 +159,10 @@ class Graph extends React.Component {
     const newData = update(data, "node").set(nodeID, {
       style: {
         keyshape: keyShape,
+        label: {
+          value: [__i].toString(),
+          offset: [0, -15]
+        }
         // badges: [
         //   {
         //     position: "RT",
@@ -171,6 +189,12 @@ class Graph extends React.Component {
     const newState = this.state;
     newState.upperBound = i;
     console.log(newState);
+    this.setState(newState);
+  }
+
+  TimeOnChange(i) {
+    const newState = this.state;
+    newState.time = (i) % this.state.timeLimit;
     this.setState(newState);
   }
 
@@ -212,7 +236,7 @@ class Graph extends React.Component {
     newState.data = newData;
     this.setState(newState);
     for (let i = 0; i < newData.nodes.length; i++) {
-      newData = this.updateNode(newData, newData.nodes[i].id);
+      newData = this.updateNode(newData, newData.nodes[i].id, i);
     }
     newState.data = newData;
     this.setState(newState);
@@ -249,6 +273,16 @@ class Graph extends React.Component {
             <ZoomCanvas />
           </Graphin>
         </Card>
+        <div>
+          <span>跳转时间：</span>
+          <Input
+            style={{ width: 100 }}
+            defaultValue={this.state.timeLimit}
+            onChange={(event) => {
+              this.TimeOnChange(event.target.value);
+            }}
+          ></Input>
+        </div>
         <div>
           <span>白粉分界QueueSize：</span>
           <Input
