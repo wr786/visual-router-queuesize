@@ -7,22 +7,31 @@ import Graphin, {
 } from "@antv/graphin";
 import { Row, Col, Card, Button, Input } from "antd";
 import { PlayCircleOutlined, PauseOutlined } from "@ant-design/icons";
+import outputData from './data.json'
 const { DragCanvas, ZoomCanvas, DragNode, ActivateRelations } = Behaviors;
 
+const sep = "                      ";
+
+const grayNode = {
+  size: 20,
+  fill: "#ddd",
+  stroke: "#000",
+};
+
 const whiteNode = {
-  size: 30,
+  size: 20,
   fill: "#fff",
   stroke: "#000",
 };
 
 const pinkNode = {
-  size: 30,
+  size: 20,
   fill: "#e799b0",
   stroke: "#e799b0",
 };
 
 const redNode = {
-  size: 30,
+  size: 20,
   fill: "#F00",
   stroke: "#F00",
 };
@@ -61,48 +70,56 @@ const update = (data, type = "node") => {
 class Graph extends React.Component {
   constructor(props) {
     super(props);
+    
+    let tmpEdges = []
+    for (let i = 0; i < outputData.edges.length; i++) {
+      tmpEdges.push({
+        source: outputData.edges[i].source,
+        target: outputData.edges[i].target,
+        style: {
+          label: {
+            value: outputData.edges[i].sTimeline[0][1] + sep + outputData.edges[i].tTimeline[0][1],
+            fontSize: 8
+          }
+        }
+      })
+    }
+
     this.state = {
       isPlaying: false,
       lowerBound: 33, // 控制顔色對應queuesize上下限
       upperBound: 66,
       timer: 0,
+      time: 0,
+      timeLimit: outputData.timeLimit,
       data: {
-        nodes: [
-          { id: "node-0" },
-          { id: "node-1" },
-          { id: "node-2" },
-          { id: "node-3" },
-          { id: "node-4" },
-          { id: "node-5" },
-        ],
-        edges: [
-          {
-            source: "node-0",
-            target: "node-1",
-          },
-          {
-            source: "node-1",
-            target: "node-2",
-          },
-          {
-            source: "node-1",
-            target: "node-3",
-          },
-          {
-            source: "node-3",
-            target: "node-4",
-          },
-        ],
+        nodes: outputData.nodes,
+        edges: tmpEdges
       },
     };
   }
 
+  beforeUpdateNode(data, nodeID) {
+    const newData = update(data, "node").set(nodeID, {
+      style: {
+        keyshape: grayNode,
+      },
+    });
+    return newData;
+  }
+
   updateNode(data, nodeID) {
-    const queueSize = Math.round(Math.random() * 100); // 应该换成读取
+    // const queueSum = Math.round(Math.random() * 100); // 应该换成读取
+    let queueSum = 0;
+    for(let i = 0; i < data.edges.length; i++) {
+      if(data.edges[i].target === nodeID) {
+        queueSum += parseInt(data.edges[i].style.label.value.split(sep)[1])
+      }
+    }
     let keyShape = whiteNode;
-    if (queueSize >= this.state.upperBound) {
+    if (queueSum >= this.state.upperBound) {
       keyShape = redNode;
-    } else if (queueSize >= this.state.lowerBound) {
+    } else if (queueSum >= this.state.lowerBound) {
       keyShape = pinkNode;
     }
     const newData = update(data, "node").set(nodeID, {
@@ -112,8 +129,8 @@ class Graph extends React.Component {
           {
             position: "RT",
             type: "text",
-            value: queueSize,
-            size: [20, 20],
+            value: queueSum,
+            size: [15, 15],
             color: "#fff",
             fill: "red",
           },
@@ -140,12 +157,31 @@ class Graph extends React.Component {
   update() {
     if (this.state.isPlaying === false) return;
     let newData = this.state.data;
-    for (let i = 0; i < 6; i++) {
-      newData = this.updateNode(newData, "node-" + i.toString());
+    let time = (this.state.time + 1) % this.state.timeLimit;
+    for (let i = 0; i < newData.edges.length; i++) {
+      for (let j = 0; j < outputData.edges.length; j++) {
+        if(newData.edges[i].source === outputData.edges[j].source && newData.edges[i].target === outputData.edges[j].target) {
+          newData.edges[i].style.label.value = outputData.edges[j].sTimeline[time][1] + sep + outputData.edges[j].tTimeline[time][1]
+          break;
+        }
+      }
     }
     const newState = this.state;
     newState.data = newData;
+    newState.time = time;
     this.setState(newState);
+    for (let i = 0; i < newData.nodes.length; i++) {
+      newData = this.beforeUpdateNode(newData, newData.nodes[i].id);
+    }
+    newState.data = newData;
+    this.setState(newState);
+    for (let i = 0; i < newData.nodes.length; i++) {
+      newData = this.updateNode(newData, newData.nodes[i].id);
+    }
+    newState.data = newData;
+    this.setState(newState);
+    console.log(newState);
+
   }
 
   startDisplaying() {

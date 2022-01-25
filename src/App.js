@@ -8,12 +8,12 @@ function App() {
   return (
     <div className="App">
       <Layout>
-        <Header style={{ textAlign: "center", padding: "0.3em" }}>
+        <Header style={{ textAlign: "center", padding: "0.2em" }}>
           <Title>
             <div style={{ color: "white" }}>Visual Router QueueSize</div>
           </Title>
         </Header>
-        <Content style={{ padding: "0 400px" }}>
+        <Content style={{ padding: "0 10%" }}>
           <Graph />
         </Content>
         <Footer>by <Link href="https://github.com/wr786" target="_blank">@wr786</Link></Footer>
