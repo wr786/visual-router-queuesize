@@ -5,12 +5,13 @@ import Graphin, {
   GraphinData,
   Behaviors,
 } from "@antv/graphin";
+import G6 from '@antv/g6';  
 import { Row, Col, Card, Button, Input } from "antd";
 import { PlayCircleOutlined, PauseOutlined } from "@ant-design/icons";
-import outputData from './data.json'
+import outputData from './data.json';
 const { DragCanvas, ZoomCanvas, DragNode, ActivateRelations } = Behaviors;
 
-const sep = "                      ";
+const sep = "                                            ";
 
 const grayNode = {
   size: 20,
@@ -35,6 +36,21 @@ const redNode = {
   fill: "#F00",
   stroke: "#F00",
 };
+
+const blackArrow = {
+  path: 'M 0,0 L 8,4 L 8,-4 Z',
+  fill: '#545872'
+};
+
+const pinkArrow = {
+  path: 'M 0,0 L 8,4 L 8,-4 Z',
+  fill: '#e799b0'
+};
+
+const redArrow = {
+  path: 'M 0,0 L 8,4 L 8,-4 Z',
+  fill: '#F00'
+}
 
 const defaultNode = {
   type: "graphin-circle",
@@ -80,7 +96,11 @@ class Graph extends React.Component {
           label: {
             value: outputData.edges[i].sTimeline[0][1] + sep + outputData.edges[i].tTimeline[0][1],
             fontSize: 8
-          }
+          },
+          keyshape: {
+            startArrow: blackArrow,
+            endArrow: blackArrow
+          },
         }
       })
     }
@@ -111,11 +131,11 @@ class Graph extends React.Component {
   updateNode(data, nodeID) {
     // const queueSum = Math.round(Math.random() * 100); // 应该换成读取
     let queueSum = 0;
-    for(let i = 0; i < data.edges.length; i++) {
-      if(data.edges[i].target === nodeID) {
-        queueSum += parseInt(data.edges[i].style.label.value.split(sep)[1])
-      }
-    }
+    // for(let i = 0; i < data.edges.length; i++) {
+    //   if(data.edges[i].target === nodeID) {
+    //     queueSum += parseInt(data.edges[i].style.label.value.split(sep)[1])
+    //   }
+    // }
     let keyShape = whiteNode;
     if (queueSum >= this.state.upperBound) {
       keyShape = redNode;
@@ -125,16 +145,16 @@ class Graph extends React.Component {
     const newData = update(data, "node").set(nodeID, {
       style: {
         keyshape: keyShape,
-        badges: [
-          {
-            position: "RT",
-            type: "text",
-            value: queueSum,
-            size: [15, 15],
-            color: "#fff",
-            fill: "red",
-          },
-        ],
+        // badges: [
+        //   {
+        //     position: "RT",
+        //     type: "text",
+        //     value: queueSum,
+        //     size: [15, 15],
+        //     color: "#fff",
+        //     fill: "red",
+        //   },
+        // ],
       },
     });
     return newData;
@@ -162,6 +182,22 @@ class Graph extends React.Component {
       for (let j = 0; j < outputData.edges.length; j++) {
         if(newData.edges[i].source === outputData.edges[j].source && newData.edges[i].target === outputData.edges[j].target) {
           newData.edges[i].style.label.value = outputData.edges[j].sTimeline[time][1] + sep + outputData.edges[j].tTimeline[time][1]
+          const inFlow = parseInt(outputData.edges[j].sTimeline[time][1]);
+          const outFlow = parseInt(outputData.edges[j].tTimeline[time][1]);
+          if(inFlow > this.state.upperBound) {
+            newData.edges[i].style.keyshape.startArrow = redArrow;
+          } else if (inFlow > this.state.lowerBound) {
+            newData.edges[i].style.keyshape.startArrow = pinkArrow;
+          } else {
+            newData.edges[i].style.keyshape.startArrow = blackArrow;
+          }
+          if(outFlow > this.state.upperBound) {
+            newData.edges[i].style.keyshape.endArrow = redArrow;
+          } else if (outFlow > this.state.lowerBound) {
+            newData.edges[i].style.keyshape.endArrow = pinkArrow;
+          } else {
+            newData.edges[i].style.keyshape.endArrow = blackArrow;
+          }
           break;
         }
       }
